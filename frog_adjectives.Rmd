@@ -22,18 +22,17 @@ theme_set(theme_classic(base_size = 14))
 
 ```{r read-data}
 utterances <- read_feather(here("data/frog_english_parsed.feather"))
+
 ```
 
 ```{r get-adjs}
 adj_utts <- utterances %>%
   filter(str_detect(utt_parse, "ADJ"))
 
-# this doesn't always align things properly when udpipe separated a contraction
-# but should be right for most cases
 adj_utts <- adj_utts %>%
   rowwise() %>%
   mutate(adj_positions = list(which(unlist(str_split(utt_parse, " ")) == "ADJ"))) %>%
-  mutate(adjectives = list(unlist(str_split(gloss, " "))[adj_positions])) %>%
+  mutate(adjectives = list(unlist(str_split(word_parse, " "))[adj_positions])) %>%
   unnest_longer(adjectives) %>%
   select(-adj_positions)
 

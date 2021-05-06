@@ -31,7 +31,7 @@ utterances <- utterances %>%
 ```{r parse}
 udmodel <- udpipe_load_model(file = here("udpipe/english-ewt-ud-2.4-190531.udpipe"))
 
-get_word_parse <- function(txt) {
+get_parse <- function(txt) {
   parses <- txt %>%
     udpipe(., udmodel, parallel.cores = 4) %>%
     as_tibble()
@@ -39,12 +39,22 @@ get_word_parse <- function(txt) {
   return(paste(parses$upos, collapse = " "))
 }
 
-vget_parse <- Vectorize(get_word_parse)
+get_word_parse <- function(txt) {
+  parses <- txt %>%
+    udpipe(., udmodel, parallel.cores = 4) %>%
+    as_tibble()
+  
+  return(paste(parses$token, collapse = " "))
+}
+
+vget_parse <- Vectorize(get_parse)
+vget_word_parse <- Vectorize(get_word_parse)
 
 parsed_utts <- utterances %>%
   filter(str_detect(corpus_name, "English")) %>%
   rowwise() %>%
-  mutate(utt_parse = vget_parse(gloss))
+  mutate(utt_parse = vget_parse(gloss)) %>%
+  mutate(word_parse = vget_word_parse(gloss))
 
-#write_feather(parsed_utts, here("data/frog+english_parsed.feather"))
+#write_feather(parsed_utts, here("data/frog_english_parsed.feather"))
 ```
