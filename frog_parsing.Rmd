@@ -1,0 +1,50 @@
+---
+title: "frogs parsing"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(knitr)
+library(here)
+library(tidyverse)
+library(childesr)
+library(udpipe)
+library(feather)
+
+opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+               error = FALSE, cache = TRUE, tidy = FALSE)
+
+theme_set(theme_classic(base_size = 14))
+```
+
+```{r read-childes}
+utterances <- get_utterances(collection = "Frogs")
+
+utterances <- utterances %>%
+  mutate(gloss = str_to_lower(gloss)) %>%
+  filter(str_squish(gloss) != "") %>%
+  arrange(transcript_id,utterance_order)
+```
+
+```{r parse}
+udmodel <- udpipe_load_model(file = here("udpipe/english-ewt-ud-2.4-190531.udpipe"))
+
+get_word_parse <- function(txt) {
+  parses <- txt %>%
+    udpipe(., udmodel, parallel.cores = 4) %>%
+    as_tibble()
+  
+  return(paste(parses$upos, collapse = " "))
+}
+
+vget_parse <- Vectorize(get_word_parse)
+
+parsed_utts <- utterances %>%
+  filter(str_detect(corpus_name, "English")) %>%
+  rowwise() %>%
+  mutate(utt_parse = vget_parse(gloss))
+
+#write_feather(parsed_utts, here("data/frog+english_parsed.feather"))
+```
