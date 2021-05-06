@@ -1,0 +1,58 @@
+---
+title: "frog adjectives"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(knitr)
+library(here)
+library(tidyverse)
+library(childesr)
+library(RColorBrewer)
+library(feather)
+library(DT)
+
+opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+               error = FALSE, cache = TRUE, tidy = FALSE)
+
+theme_set(theme_classic(base_size = 14))
+```
+
+```{r read-data}
+utterances <- read_feather(here("data/frog_english_parsed.feather"))
+```
+
+```{r get-adjs}
+adj_utts <- utterances %>%
+  filter(str_detect(utt_parse, "ADJ"))
+
+# this doesn't always align things properly when udpipe separated a contraction
+# but should be right for most cases
+adj_utts <- adj_utts %>%
+  rowwise() %>%
+  mutate(adj_positions = list(which(unlist(str_split(utt_parse, " ")) == "ADJ"))) %>%
+  mutate(adjectives = list(unlist(str_split(gloss, " "))[adj_positions])) %>%
+  unnest_longer(adjectives) %>%
+  select(-adj_positions)
+
+
+# still got a bunch of NAs from incorrect parsing but top ones are informative
+top_adjs <- adj_utts %>%
+  count(adjectives) %>%
+  arrange(desc(n))
+  
+datatable(top_adjs)
+```
+
+Top adjectives in Frogs English corpus.
+
+```{r num-adjs}
+adj_utts %>%
+  group_by(id) %>%
+  count() %>%
+  ggplot() +
+  geom_histogram(aes(n))
+
+```
