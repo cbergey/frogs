@@ -27,6 +27,7 @@ utterances <- read_feather(here("data/frog_english_parsed.feather"))
 
 ```{r get-adjs}
 adj_utts <- utterances %>%
+  filter(speaker_role != "Investigator") %>%
   filter(str_detect(utt_parse, "ADJ"))
 
 adj_utts <- adj_utts %>%
@@ -63,16 +64,16 @@ adj_utts <- adj_utts %>%
   left_join(num_adjs)
 
 adj_utts %>%
-  distinct(id, speaker_code, gloss, n_adjs) %>%
+  distinct(id, speaker_role, gloss, n_adjs) %>%
   mutate(n_adjs = as.factor(n_adjs)) %>%
-  group_by(speaker_code, n_adjs) %>% count() %>%
-  ggplot(aes(x = speaker_code, y = n, fill = n_adjs)) +
+  group_by(speaker_role, n_adjs) %>% count() %>%
+  ggplot(aes(x = speaker_role, y = n, fill = n_adjs)) +
   geom_bar(position="fill", stat="identity") +
   theme_classic()
 
 datatable(adj_utts %>% 
             filter(n_adjs > 1) %>% 
-            distinct(speaker_code, gloss, id) %>%
-            select(speaker_code, gloss))
+            distinct(speaker_role, gloss, id) %>%
+            select(speaker_role, gloss))
 
 ```
